@@ -53,7 +53,7 @@ const Home = ({ navigation }) => {
             if (value !== null) {
                 // We have data!!
      
-                setData(JSON.parse(Object))
+                setData(JSON.parse(value))
             }
         } catch (error) {
             // Error retrieving data
@@ -61,7 +61,7 @@ const Home = ({ navigation }) => {
     };
 
     const arr = text.length ? result : data;
-    console.log(arr);
+
     return (
         <View style={styles.container}>
             <View style={{ flexDirection: "row", backgroundColor: 'white', marginTop: 20, justifyContent: 'center', alignItems: 'center' }}>
@@ -80,13 +80,12 @@ const Home = ({ navigation }) => {
             </View>
             <View style={styles.flatListStyle}>
                 <FlatList
-                horizontal
                     data={arr}
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => {
                         return (
                             <TouchableOpacity style={styles.row} onPress={() => goToChatRoom()}>
-                                <Text>{item.text}</Text>
+                                <Text>{item.english}  {item.englishTrans}  {item.nativeText}</Text>
                             </TouchableOpacity>
                         )
                     }}

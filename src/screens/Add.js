@@ -22,51 +22,34 @@ const Add = ({ navigation }) => {
     const [englishTrans, setEnglishTrans] = useState('')
     const [english, setEnglish] = useState('')
 
-    // const addIem = async () => {
-    //     const obj = [{
-    //         id: 1,
-    //         text: nativeText
-    //     }, {
-    //         id: 2,
-    //         text: englishTrans
-    //     }, {
-    //         id: 3,
-    //         text: english
-    //     }]
+    const addIem = async () => {
+        const obj = {
+            id: 1,
+            nativeText: nativeText,
+            englishTrans: englishTrans,
+            english: english
+        }
 
-    //     try {
-    //         const value = await AsyncStorage.getItem('data');
-    //         const pars = JSON.parse(value)
+        try {
+            const value = await AsyncStorage.getItem('data');
+            const pars = JSON.parse(value) //pars is a varriable
 
-    //         if (pars == null) {
-    //             await AsyncStorage.setItem('data', JSON.stringify(obj));
-    //         }
-    //         else {
-    //             let data1 = [...pars, {
-    //                 id: 1,
-    //                 text: nativeText
+            if (pars == null) {
+                await AsyncStorage.setItem('data', JSON.stringify([obj]));
+            }
+            else {
+                let data = [...pars, obj]
+                await AsyncStorage.setItem('data', JSON.stringify(data));
+                navigation.navigate('HomeScreen')
+            }
 
-    //             }]
-    //             let data2 = [...data1, {
-    //                 id: 2,
-    //                 text: englishTrans
-    //             }]
-    //             let data3 = [...data3, {
-    //                 id: 3,
-    //                 text: english
-    //             }]
-    //             await AsyncStorage.setItem('data', JSON.stringify(data3));
-    //             alert("data inserted")
-    //         }
-
-    //     } catch (error) {
-    //         // Error saving data
-    //     }
-    // }
-
-    const goToHomeScreen = () =>{
-        navigation.navigate('HomeScreen')
+        } catch (error) {
+            // Error saving data
+        }
     }
+
+
+
     return (
         <View style={styles.container}>
             <View style={styles.inputBox}>
@@ -99,7 +82,8 @@ const Add = ({ navigation }) => {
 
                 </View>
             </View>
-            <TouchableOpacity style={{ backgroundColor: 'white', padding: 10, width:60, }} onPress={() => goToHomeScreen()}>
+            
+            <TouchableOpacity style={{ backgroundColor: 'white', padding: 10, width: 60, }} onPress={() => addIem()}>
                 <Text>Send</Text>
             </TouchableOpacity>
         </View>
