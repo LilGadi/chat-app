@@ -13,11 +13,39 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
+import { askForPermission } from '../utils/permission';
+import { createDirectory } from '../utils/directory';
 
 const Home = ({ navigation }) => {
     let [data, setData] = useState([])
     const [text, setText] = useState('')
     const [result, setResult] = useState('')
+    
+    useEffect(() => {
+        checkPermission()
+        const listener = navigation.addListener('didFocus',
+        () => {
+            _retrieveData()
+        }
+        )
+        return function cleanup() {
+            listener.remove();
+        };
+        
+    }, [])
+
+    const checkPermission = async () => {
+        try {
+            const res = await askForPermission()
+            console.log("res========",res);
+            if (res) {
+                await createDirectory()
+            }
+            
+        } catch (error) {
+            console.log("permission not given from patient home=======", error);
+        }
+    }
 
     const search = (e) => {
         let result = data.filter((elm) => {
@@ -27,22 +55,10 @@ const Home = ({ navigation }) => {
         setText(e)
     }
 
-
-    useEffect(() => {
-        const listener = navigation.addListener('didFocus',
-            () => {
-                _retrieveData()
-            }
-        )
-        return function cleanup() {
-            listener.remove();
-        };
-
-    }, [])
-
     const goToChatRoom = () => {
         navigation.navigate('ChatRoomScreen')
     }
+
     const goToAdd = () => {
         navigation.navigate('AddScreen')
     }
@@ -52,7 +68,7 @@ const Home = ({ navigation }) => {
             const value = await AsyncStorage.getItem('data');
             if (value !== null) {
                 // We have data!!
-     
+
                 setData(JSON.parse(value))
             }
         } catch (error) {
