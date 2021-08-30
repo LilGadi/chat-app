@@ -14,20 +14,42 @@ import {
 
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
-
+import AudioRecorderPlayer, {
+    AVEncoderAudioQualityIOSType,
+    AVEncodingOption,
+    AudioEncoderAndroidType,
+    AudioSet,
+    AudioSourceAndroidType,
+} from 'react-native-audio-recorder-player';
+import uuid from 'react-native-uuid';
+import { getAudioFolderPath } from '../utils/directory';
 
 const Add = ({ navigation }) => {
 
     const [nativeText, setNativeText] = useState('')
     const [englishTrans, setEnglishTrans] = useState('')
     const [english, setEnglish] = useState('')
+    const [recordSecs, setRecordSecs] = useState(0)
+    const [recordTime, setRecordTime] = useState('0:00')
+    const [currentPositionSec, setCurrentPositionSec] = useState(0)
+    const [currentDurationSec, setCurrentDurationSec] = useState(0)
+    const [duration, setDuration] = useState('00:00:00')
+    const [startAudio, setStartAudio] = useState(false)
+    const [currentTime, setCurrentTime] = useState(0)
+    const [recordDuration, setRecordDuration] = useState(0)
+    const [audioUri, setAudioUri] = useState('')
+
+    const timer = null;
+    const audioRecorderPlayer = new AudioRecorderPlayer();
+    audioRecorderPlayer.setSubscriptionDuration(0.09); // optional. Default is 0.1
 
     const addIem = async () => {
         const obj = {
             id: 1,
             nativeText: nativeText,
             englishTrans: englishTrans,
-            english: english
+            english: english,
+
         }
 
         try {
@@ -48,7 +70,40 @@ const Add = ({ navigation }) => {
         }
     }
 
+    const onStartRecording = async () => {
+        try {
+            const dirAudio = await getAudioFolderPath()
+            const path = `${dirAudio}/${uuid.v4()}.mp3`;
+            const audioSet = {
+                AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
+                AudioSourceAndroid: AudioSourceAndroidType.MIC,
+                AVEncoderAudioQualityKeyIOS: AVEncoderAudioQualityIOSType.high,
+                AVNumberOfChannelsKeyIOS: 2,
+                AVFormatIDKeyIOS: AVEncodingOption.aac,
+            };
+            const uri = await audioRecorderPlayer.startRecorder(path, audioSet);
+            audioRecorderPlayer.addRecordBackListener((e) => {
 
+            });
+        } catch (error) {
+
+        }
+    };
+
+    const onStopRecord = async () => {
+        // const { audioUri, recordTime, recordDuration } = this.state
+        const result = await audioRecorderPlayer.stopRecorder();
+        audioRecorderPlayer.removeRecordBackListener();
+        console.log(result);
+    };
+
+    const renderAudioRecordingTime = () => {
+        return (
+            <View style={styles.iconContainer}>
+                <Text style={styles.audioTimerText}>{recordTime}</Text>
+            </View>
+        )
+    }
 
     return (
         <View style={styles.container}>
@@ -82,9 +137,18 @@ const Add = ({ navigation }) => {
 
                 </View>
             </View>
-            
-            <TouchableOpacity style={{ backgroundColor: 'white', padding: 10, width: 60, }} onPress={() => addIem()}>
-                <Text>Send</Text>
+            {renderAudioRecordingTime()}
+            <View style={styles.row}>
+                <TouchableOpacity style={styles.recordBtn} onPress={() => onStartRecording()}>
+                    <Text style={styles.btnText}>Record</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.stopButton} onPress={() => onStopRecord()}>
+                    <Text style={styles.btnText}>Stop</Text>
+                </TouchableOpacity>
+
+            </View>
+            <TouchableOpacity style={{ backgroundColor: 'gray', padding: 10, width: 60, marginTop: 50 }} onPress={() => addIem()}>
+                <Text style={styles.btnText}>Send</Text>
             </TouchableOpacity>
         </View>
     )
@@ -108,7 +172,6 @@ const styles = StyleSheet.create({
     //input fields
     searchView: {
         flexDirection: 'row',
-
         alignSelf: 'center',
         borderWidth: 1,
         borderRadius: 8,
@@ -123,5 +186,30 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderColor: 'gray',
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    recordBtn: {
+        backgroundColor: 'red',
+        padding: 10,
+    },
+    stopButton: {
+        backgroundColor: 'black',
+        padding: 10,
+    },
+    btnText: {
+        color: 'white'
+    },
+    iconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 2,
+        paddingVertical: 6,
+    },
+    audioTimerText: {
+        color: 'black',
+        fontSize: 18,
     },
 })

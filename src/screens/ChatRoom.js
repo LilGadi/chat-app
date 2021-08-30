@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 
 const ChatRoom = ({ navigation }) => {
-
+    
     return (
         <View style={{ backgroundColor: 'white' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'blue' }}>
