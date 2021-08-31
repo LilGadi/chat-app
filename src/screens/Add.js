@@ -44,33 +44,34 @@ const Add = ({ navigation }) => {
     audioRecorderPlayer.setSubscriptionDuration(0.09); // optional. Default is 0.1
 
     const addIem = async () => {
+
         const obj = {
             id: 1,
             nativeText: nativeText,
             englishTrans: englishTrans,
             english: english,
-
+            uri: audioUri
         }
+        console.log(obj);
+        // try {
+        //     const value = await AsyncStorage.getItem('data');
+        //     const pars = JSON.parse(value) //pars is a varriable
+        //     if (pars == null) {
+        //         await AsyncStorage.setItem('data', JSON.stringify([obj]));
+        //     }
+        //     else {
+        //         let data = [...pars, obj]
+        //         await AsyncStorage.setItem('data', JSON.stringify(data));
+        //         navigation.navigate('HomeScreen')
+        //     }
 
-        try {
-            const value = await AsyncStorage.getItem('data');
-            const pars = JSON.parse(value) //pars is a varriable
-
-            if (pars == null) {
-                await AsyncStorage.setItem('data', JSON.stringify([obj]));
-            }
-            else {
-                let data = [...pars, obj]
-                await AsyncStorage.setItem('data', JSON.stringify(data));
-                navigation.navigate('HomeScreen')
-            }
-
-        } catch (error) {
-            // Error saving data
-        }
+        // } catch (error) {
+        //     // Error saving data
+        // }
     }
 
     const onStartRecording = async () => {
+        setStartAudio(true)
         try {
             const dirAudio = await getAudioFolderPath()
             const path = `${dirAudio}/${uuid.v4()}.mp3`;
@@ -83,21 +84,52 @@ const Add = ({ navigation }) => {
             };
             const uri = await audioRecorderPlayer.startRecorder(path, audioSet);
             audioRecorderPlayer.addRecordBackListener((e) => {
-
+                convertRecordingTimeToMinAndSec(e.currentPosition);
             });
         } catch (error) {
 
         }
     };
 
+    const convertRecordingTimeToMinAndSec = (millis) => {
+        var minutes = Math.floor(millis / 60000);
+        var seconds = ((millis % 60000) / 1000).toFixed(0);
+        let time = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+        setRecordTime(time)
+        setRecordDuration(millis)
+        console.log(millis);
+    }
+
     const onStopRecord = async () => {
-        // const { audioUri, recordTime, recordDuration } = this.state
+        console.log("stop======");
         const result = await audioRecorderPlayer.stopRecorder();
         audioRecorderPlayer.removeRecordBackListener();
-        console.log(result);
+        
+        if (recordTime == '0:00') {
+            setRecordSecs(0)
+            setRecordTime('0:00')
+            setStartAudio(false)
+            setRecordDuration(0)
+            setAudioUri('')
+
+        }
+        else {
+            setStartAudio(false)
+            setAudioUri(result)
+        }
+
+
     };
 
     const renderAudioRecordingTime = () => {
+        return (
+            <View style={styles.iconContainer}>
+                <Text style={styles.audioTimerText}>{recordTime}</Text>
+            </View>
+        )
+    }
+
+    const stopTime = () => {
         return (
             <View style={styles.iconContainer}>
                 <Text style={styles.audioTimerText}>{recordTime}</Text>
@@ -137,7 +169,7 @@ const Add = ({ navigation }) => {
 
                 </View>
             </View>
-            {renderAudioRecordingTime()}
+            {startAudio ? renderAudioRecordingTime() : stopTime()}
             <View style={styles.row}>
                 <TouchableOpacity style={styles.recordBtn} onPress={() => onStartRecording()}>
                     <Text style={styles.btnText}>Record</Text>

@@ -37,7 +37,6 @@ const Home = ({ navigation }) => {
     const checkPermission = async () => {
         try {
             const res = await askForPermission()
-            console.log("res========",res);
             if (res) {
                 await createDirectory()
             }
@@ -77,7 +76,7 @@ const Home = ({ navigation }) => {
     };
 
     const arr = text.length ? result : data;
-
+    console.log(arr);
     return (
         <View style={styles.container}>
             <View style={{ flexDirection: "row", backgroundColor: 'white', marginTop: 20, justifyContent: 'center', alignItems: 'center' }}>
