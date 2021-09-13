@@ -24,27 +24,32 @@ import AudioRecorderPlayer, {
 import uuid from 'react-native-uuid';
 import { getAudioFolderPath } from '../utils/directory';
 
-const Add = ({ navigation }) => {
+class Add extends React.Component {
 
-    const [nativeText, setNativeText] = useState('')
-    const [englishTrans, setEnglishTrans] = useState('')
-    const [english, setEnglish] = useState('')
-    const [recordSecs, setRecordSecs] = useState(0)
-    const [recordTime, setRecordTime] = useState('0:00')
-    const [currentPositionSec, setCurrentPositionSec] = useState(0)
-    const [currentDurationSec, setCurrentDurationSec] = useState(0)
-    const [duration, setDuration] = useState('00:00:00')
-    const [startAudio, setStartAudio] = useState(false)
-    const [currentTime, setCurrentTime] = useState(0)
-    const [recordDuration, setRecordDuration] = useState(0)
-    const [audioUri, setAudioUri] = useState('')
+    constructor(props) {
+        super(props);
+        this.state = {
+            recordSecs: 0,
+            recordTime: '0:00',
+            currentPositionSec: 0,
+            currentDurationSec: 0,
+            duration: '00:00:00',
+            startAudio: false,
+            currentTime: 0,
+            recordDuration: 0,
+            audioUri: '',
+            cursorColor: 'black',
+            nativeText: '',
+            englishTrans: '',
+            english: ''
+        };
+        this.timer = null;
+        this.audioRecorderPlayer = new AudioRecorderPlayer();
+        this.audioRecorderPlayer.setSubscriptionDuration(0.09); // optional. Default is 0.1
+    }
 
-    const timer = null;
-    const audioRecorderPlayer = new AudioRecorderPlayer();
-    audioRecorderPlayer.setSubscriptionDuration(0.09); // optional. Default is 0.1
-
-    const addIem = async () => {
-
+    addIem = async () => {
+        const { nativeText, english, englishTrans, audioUri } = this.state
         const obj = {
             id: 1,
             nativeText: nativeText,
@@ -52,29 +57,32 @@ const Add = ({ navigation }) => {
             english: english,
             uri: audioUri
         }
-        console.log(obj);
-        // try {
-        //     const value = await AsyncStorage.getItem('data');
-        //     const pars = JSON.parse(value) //pars is a varriable
-        //     if (pars == null) {
-        //         await AsyncStorage.setItem('data', JSON.stringify([obj]));
-        //     }
-        //     else {
-        //         let data = [...pars, obj]
-        //         await AsyncStorage.setItem('data', JSON.stringify(data));
-        //         navigation.navigate('HomeScreen')
-        //     }
+        try {
+            const value = await AsyncStorage.getItem('data');
+            const pars = JSON.parse(value) //pars is a varriable
+            if (pars == null) {
+                await AsyncStorage.setItem('data', JSON.stringify([obj]));
+            }
+            else {
+                let data = [...pars, obj]
+                await AsyncStorage.setItem('data', JSON.stringify(data));
+                navigation.navigate('HomeScreen')
+            }
 
-        // } catch (error) {
-        //     // Error saving data
-        // }
+        } catch (error) {
+            // Error saving data
+        }
     }
 
-    const onStartRecording = async () => {
-        setStartAudio(true)
+    onStartRecording = async () => {
+        this.setState({
+            startAudio: true,
+            recordDuration: 0
+        });
         try {
             const dirAudio = await getAudioFolderPath()
             const path = `${dirAudio}/${uuid.v4()}.mp3`;
+            const meteringEnabled = false;
             const audioSet = {
                 AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
                 AudioSourceAndroid: AudioSourceAndroidType.MIC,
@@ -82,46 +90,42 @@ const Add = ({ navigation }) => {
                 AVNumberOfChannelsKeyIOS: 2,
                 AVFormatIDKeyIOS: AVEncodingOption.aac,
             };
-            const uri = await audioRecorderPlayer.startRecorder(path, audioSet);
-            audioRecorderPlayer.addRecordBackListener((e) => {
-                convertRecordingTimeToMinAndSec(e.currentPosition);
+            const uri = await this.audioRecorderPlayer.startRecorder(path, audioSet, meteringEnabled);
+            this.audioRecorderPlayer.addRecordBackListener((e) => {
+                this.convertRecordingTimeToMinAndSec(e.currentPosition);
             });
         } catch (error) {
 
         }
     };
 
-    const convertRecordingTimeToMinAndSec = (millis) => {
+    convertRecordingTimeToMinAndSec(millis) {
         var minutes = Math.floor(millis / 60000);
         var seconds = ((millis % 60000) / 1000).toFixed(0);
         let time = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-        setRecordTime(time)
-        setRecordDuration(millis)
-        console.log(millis);
+        this.setState({ recordTime: time, recordDuration: millis });
     }
 
-    const onStopRecord = async () => {
-        console.log("stop======");
-        const result = await audioRecorderPlayer.stopRecorder();
-        audioRecorderPlayer.removeRecordBackListener();
-        
+    onStopRecord = async () => {
+        const { audioUri, recordTime, recordDuration } = this.state
+        const result = await this.audioRecorderPlayer.stopRecorder();
+        this.audioRecorderPlayer.removeRecordBackListener();
         if (recordTime == '0:00') {
-            setRecordSecs(0)
-            setRecordTime('0:00')
-            setStartAudio(false)
-            setRecordDuration(0)
-            setAudioUri('')
-
+            this.setState({
+                recordSecs: 0,
+                recordTime: '0:00',
+                startAudio: false,
+                recordDuration: 0,
+                audioUri: ''
+            });
         }
         else {
-            setStartAudio(false)
-            setAudioUri(result)
+            this.setState({ audioUri: result })
         }
-
-
     };
 
-    const renderAudioRecordingTime = () => {
+    renderAudioRecordingTime = () => {
+        const { recordTime } = this.state
         return (
             <View style={styles.iconContainer}>
                 <Text style={styles.audioTimerText}>{recordTime}</Text>
@@ -129,7 +133,8 @@ const Add = ({ navigation }) => {
         )
     }
 
-    const stopTime = () => {
+    stopTime = () => {
+        const { recordTime } = this.state
         return (
             <View style={styles.iconContainer}>
                 <Text style={styles.audioTimerText}>{recordTime}</Text>
@@ -137,53 +142,56 @@ const Add = ({ navigation }) => {
         )
     }
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.inputBox}>
-                <Text style={styles.label}>Native</Text>
-                <View style={styles.searchView}>
-                    <TextInput style={styles.inputStyle}
-                        keyboardType="default"
-                        onChangeText={(e) => setNativeText(e)}
-                    />
+    render() {
+        const { startAudio } = this.state
+        return (
+            <View style={styles.container}>
+                <View style={styles.inputBox}>
+                    <Text style={styles.label}>Native</Text>
+                    <View style={styles.searchView}>
+                        <TextInput style={styles.inputStyle}
+                            keyboardType="default"
+                            onChangeText={(e) => this.setState({ nativeText: e })}
+                        />
+
+                    </View>
+                </View>
+                <View style={styles.inputBox}>
+                    <Text style={styles.label}>English Translate</Text>
+                    <View style={styles.searchView}>
+                        <TextInput style={styles.inputStyle}
+                            keyboardType="default"
+                            onChangeText={(e) => this.setState({ englishTrans: e })}
+                        />
+
+                    </View>
+                </View>
+                <View style={styles.inputBox}>
+                    <Text style={styles.label}>English</Text>
+                    <View style={styles.searchView}>
+                        <TextInput style={styles.inputStyle}
+                            keyboardType="default"
+                            onChangeText={(e) => this.setState({ english: e })}
+                        />
+
+                    </View>
+                </View>
+                {startAudio ? this.renderAudioRecordingTime() : this.stopTime()}
+                <View style={styles.row}>
+                    <TouchableOpacity style={styles.recordBtn} onPress={() => this.onStartRecording()}>
+                        <Text style={styles.btnText}>Record</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.stopButton} onPress={() => this.onStopRecord()}>
+                        <Text style={styles.btnText}>Stop</Text>
+                    </TouchableOpacity>
 
                 </View>
-            </View>
-            <View style={styles.inputBox}>
-                <Text style={styles.label}>English Translate</Text>
-                <View style={styles.searchView}>
-                    <TextInput style={styles.inputStyle}
-                        keyboardType="default"
-                        onChangeText={(e) => setEnglishTrans(e)}
-                    />
-
-                </View>
-            </View>
-            <View style={styles.inputBox}>
-                <Text style={styles.label}>English</Text>
-                <View style={styles.searchView}>
-                    <TextInput style={styles.inputStyle}
-                        keyboardType="default"
-                        onChangeText={(e) => setEnglish(e)}
-                    />
-
-                </View>
-            </View>
-            {startAudio ? renderAudioRecordingTime() : stopTime()}
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.recordBtn} onPress={() => onStartRecording()}>
-                    <Text style={styles.btnText}>Record</Text>
+                <TouchableOpacity style={{ backgroundColor: 'gray', padding: 10, width: 60, marginTop: 50 }} onPress={() => this.addIem()}>
+                    <Text style={styles.btnText}>Send</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.stopButton} onPress={() => onStopRecord()}>
-                    <Text style={styles.btnText}>Stop</Text>
-                </TouchableOpacity>
-
             </View>
-            <TouchableOpacity style={{ backgroundColor: 'gray', padding: 10, width: 60, marginTop: 50 }} onPress={() => addIem()}>
-                <Text style={styles.btnText}>Send</Text>
-            </TouchableOpacity>
-        </View>
-    )
+        )
+    }
 }
 
 export default Add

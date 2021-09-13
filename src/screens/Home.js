@@ -47,15 +47,17 @@ const Home = ({ navigation }) => {
     }
 
     const search = (e) => {
+        // console.log(e);
         let result = data.filter((elm) => {
-            return elm.text.includes(e);
+            return elm.english.includes(e);
         })
         setResult(result)
         setText(e)
     }
 
-    const goToChatRoom = () => {
-        navigation.navigate('ChatRoomScreen')
+    const goToChatRoom = (item) => {
+        
+        navigation.navigate('ChatRoomScreen',{url: item.uri})
     }
 
     const goToAdd = () => {
@@ -76,7 +78,7 @@ const Home = ({ navigation }) => {
     };
 
     const arr = text.length ? result : data;
-    console.log(arr);
+    // console.log(arr);
     return (
         <View style={styles.container}>
             <View style={{ flexDirection: "row", backgroundColor: 'white', marginTop: 20, justifyContent: 'center', alignItems: 'center' }}>
@@ -99,7 +101,7 @@ const Home = ({ navigation }) => {
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => {
                         return (
-                            <TouchableOpacity style={styles.row} onPress={() => goToChatRoom()}>
+                            <TouchableOpacity style={styles.row} onPress={() => goToChatRoom(item)}>
                                 <Text>{item.english}  {item.englishTrans}  {item.nativeText}</Text>
                             </TouchableOpacity>
                         )
